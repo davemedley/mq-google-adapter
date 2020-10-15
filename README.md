@@ -6,7 +6,7 @@ https://github.com/googleapis/nodejs-pubsub
 https://github.com/ibm-messaging/mq-mqi-nodejs
 
 gcpToMQ.js - Reads from a GCP Pub Sub Subscription and puts to a fixed MQ queue. All defined on inputs.
-gcpToMQSub.js- Reads from a GCP Pub Sub Subscription and puts to an MQ subscription. All defined on inputs.
+gcpToMQTop.js- Reads from a GCP Pub Sub Subscription and puts to an MQ subscription. All defined on inputs.
 
 mqToGCP.js- Reads from a fixed MQ queue and puts to a GCP Pub Sub Topic. All defined on inputs.
 mqToGCP.js- Reads from an MQ Subscription and puts to a GCP Pub Sub Topic. All defined on inputs.

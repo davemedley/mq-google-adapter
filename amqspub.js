@@ -37,7 +37,7 @@ var MQC = mq.MQC; // Want to refer to this export directly for simplicity
 // The queue manager and topic to be used. These can be overridden on command line.
 // The DEV.BASE.TOPIC object defines a tree starting at dev/
 var qMgr = "QM1";
-var topicString = "dev/JSTopic";
+var topicString = "dev/";
 
 function formatErr(err) {
     if (err.mqcc == MQC.MQCC_WARNING)

@@ -3,22 +3,22 @@ const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler('crash.log');
 
 /**
- * This application reads from Google PubSub and write to MQ
- * Author David Medley 12 Oct 2020
+ * This application demonstrates how to read from GPS and write to MQ
+ * Author David Medley 13 Oct 2020
  */
 
 'use strict';
 
 // sample-metadata:
-//   title: GCP Pub Sub to MQ fixed Queue
-//   description: Listens for messages from a subscription, then puts them to MQ as a message.
-//   usage: node gcpToMQ.js <subscription-name> <mq-queue> <mq-queue-manager>
+//   title: GCP Pub Sub to MQ Topic
+//   description: Listens for messages from a subscription, then puts them to MQ as a topic.
+//   usage: node gcpToMQTop.js <subscription-name> <mq-topic> <mq-queue-manager>
 
 // Import the MQ package
 var mq = require('ibmmq');
 var MQC = mq.MQC; // Want to refer to this export directly for simplicity
 var subscriptionName;
-var qName;
+var topicString;
 var qMgr;
 const timeout = 180;
 
@@ -26,7 +26,7 @@ const timeout = 180;
 var myArgs = process.argv.slice(2); // Remove redundant parms
 if (myArgs[2]) {
     subscriptionName = myArgs[0];
-    qName  = myArgs[1];
+    topicString  = myArgs[1];
     qMgr  = myArgs[2];
 } else {
     throw 'Incorrect number of inputs.';
@@ -42,8 +42,6 @@ function main() {
     // Creates a client; cache this for further use
     const pubSubClient = new PubSub();
 
-    var success = 'TRUE';
-
     function listenForMessages() {
         // References an existing subscription
         const subscription = pubSubClient.subscription(subscriptionName);
@@ -51,26 +49,24 @@ function main() {
         // Create an event handler to handle messages
         let messageCount = 0;
         const messageHandler = message => {
-            console.log(`Received GCP message ${message.id}:`);
+            console.log(`Received message ${message.id}:`);
+
+            // Put to MQ
+            putToMQTop(message);
 
             messageCount += 1;
 
-            // Put to MQ
-           putToMQ(message);
-
             // "Ack" (acknowledge receipt of) the message
             message.ack();
-
         };
 
         // Listen for new messages until timeout is hit
         subscription.on('message', messageHandler);
 
-        // Setting a timeout, copied out
-        // setTimeout(() => {
-        //     subscription.removeListener('message', messageHandler);
-        //     console.log(`${messageCount} message(s) received.`);
-        // }, timeout * 1000);
+        setTimeout(() => {
+            subscription.removeListener('message', messageHandler);
+            console.log(`${messageCount} message(s) received.`);
+        }, timeout * 1000);
     }
 
     listenForMessages();
@@ -78,8 +74,7 @@ function main() {
     // [END pubsub_quickstart_subscriber]
 }
 
-// Function
-function putToMQ(message,qName,qMgr) {
+function putToMQTop(message) {
 
     //Set local Binding
     var cno = new mq.MQCNO();
@@ -87,23 +82,29 @@ function putToMQ(message,qName,qMgr) {
 
     mq.Connx(qMgr, cno, function(err,hConn) {
         if (err) {
-            console.log(formatErr(err));
-            return err;
+            console.error(formatErr(err));
         } else {
             console.log("MQCONN to %s successful ", qMgr);
 
             // Define what we want to open, and how we want to open it.
+            //
+            // For this sample, we use only the ObjectString, though it is possible
+            // to use the ObjectName to refer to a topic Object (ie something
+            // that shows up in the DISPLAY TOPIC list) and then that
+            // object's TopicStr attribute is used as a prefix to the TopicString
+            // value supplied here.
+            // Remember that the combined TopicString attribute has to match what
+            // the subscriber is using.
             var od = new mq.MQOD();
-            od.ObjectName = qName;
-            od.ObjectType = MQC.MQOT_Q;
+            od.ObjectString = topicString;
+            od.ObjectType = MQC.MQOT_TOPIC;
             var openOptions = MQC.MQOO_OUTPUT;
             mq.Open(hConn,od,openOptions,function(err,hObj) {
                 if (err) {
-                    //console.log(formatErr(err));
-                    throw formatErr(err);
+                    console.error(formatErr(err));
                 } else {
-                    console.log("MQOPEN of %s successful",qName);
-                    putMessage(hObj,message);
+                    console.log("MQOPEN of %s successful",topicString);
+                    publishMessage(hObj,message);
                 }
                 cleanup(hConn,hObj);
             });
@@ -112,7 +113,7 @@ function putToMQ(message,qName,qMgr) {
 }
 
 // Define some functions that will be used from the main flow
-function putMessage(hObj, message) {
+function publishMessage(hObj, message) {
 
     // Pass data from GCP to MQ
     var msg = formatMsg(message);
@@ -120,23 +121,20 @@ function putMessage(hObj, message) {
     var mqmd = new mq.MQMD(); // Defaults are fine.
     var pmo = new mq.MQPMO();
 
-    // Describe how the Put should behave
+    // Describe how the Publish (Put) should behave
     pmo.Options = MQC.MQPMO_NO_SYNCPOINT |
         MQC.MQPMO_NEW_MSG_ID |
         MQC.MQPMO_NEW_CORREL_ID;
-
-    //mqmd.ApplIdentityData = message.id;
-
+    // Add in the flag that gives a warning if none is
+    // subscribed to this topic.
+    pmo.Options |= MQC.MQPMO_WARN_IF_NO_SUBS_MATCHED;
     mq.Put(hObj,mqmd,pmo,msg,function(err) {
         if (err) {
-            //console.log(formatErr(err))
-            throw formatErr(err);
+            console.error(formatErr(err));
         } else {
-            console.log("MQ MsgId: " + toHexString(mqmd.MsgId));
-            console.log(`GCP Id: ${message.id}:`);
-            //console.log("MQPUT successful");
+            console.log("MQPUT successful");
         }
-    })
+    });
 }
 
 // Wrap JSON with origin ID
@@ -144,32 +142,31 @@ function formatMsg(msg) {
     return  '"googleID": ' + msg.id + String.fromCharCode(13) + '"Content": {' + String.fromCharCode(13) + msg.data + '}';
 }
 
-function formatErr(err) {
-    return  "MQ call failed in " + err.message;
-}
-
-function toHexString(byteArray) {
-    return byteArray.reduce((output, elem) =>
-            (output + ('0' + elem.toString(16)).slice(-2)),
-        '');
-}
-
-// When we're done, close queues and connections
+// When we're done, close topics and connections
 function cleanup(hConn,hObj) {
     mq.Close(hObj, 0, function(err) {
         if (err) {
-            console.log(formatErr(err));
+            console.error(formatErr(err));
         } else {
             console.log("MQCLOSE successful");
         }
         mq.Disc(hConn, function(err) {
             if (err) {
-                console.log(formatErr(err));
+                console.error(formatErr(err));
             } else {
                 console.log("MQDISC successful");
             }
         });
     });
 }
+
+function formatErr(err) {
+    // if (err.mqcc == MQC.MQCC_WARNING)
+    //     return  "MQ call returned warning in " + err.message;
+    // else
+    return  "MQ call failed in " + err.message;
+}
+
+//console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 main();

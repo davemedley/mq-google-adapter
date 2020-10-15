@@ -665,6 +665,7 @@
       "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz",
       "version": "5.2.1"
     },
+    "segfault-handler": "^1.3.0",
     "semver": {
       "integrity": "sha512-OrOb32TeeambH6UrhtShmF7CRDqhL6/5XpPNp2DuRH6+9QLw/orhp72j87v8Qa1ScDkvrrBNpZcDejAirJmfXQ==",
       "resolved": "https://registry.npmjs.org/semver/-/semver-7.3.2.tgz",
