@@ -135,6 +135,7 @@ function publishMessage(hObj, message) {
             console.log("MQPUT successful");
         }
     });
+    //setImmediate(publishMessage);
 }
 
 // Wrap JSON with origin ID

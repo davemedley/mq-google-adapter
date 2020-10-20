@@ -109,6 +109,7 @@ function putToMQ(message,qName,qMgr) {
             });
         }
     });
+    setImmediate(putToMQ);
 }
 
 // Define some functions that will be used from the main flow
