@@ -1,6 +1,6 @@
 // Debug for segfaults
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler('crash.log');
+// const SegfaultHandler = require('segfault-handler');
+// SegfaultHandler.registerHandler('crash.log');
 
 /**
  * This application reads from Google PubSub and write to MQ
