@@ -1,6 +1,6 @@
 // Debug for segfaults
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler('crash.log');
+// const SegfaultHandler = require('segfault-handler');
+// SegfaultHandler.registerHandler('crash.log');
 
 /**
  * This application demonstrates how to read from GPS and write to MQ
