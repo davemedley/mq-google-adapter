@@ -2,6 +2,12 @@
   "name": "mq-google-adapter",
   "version": "1.0.0",
   "lockfileVersion": 1,
+  "description": "Node.js on Docker",
+  "author": "First Last <first.last@example.com>",
+  "main": ".js",
+  "scripts": {
+    "start": "node gcpToMQTop.js subscription topic qmgr"
+  },
   "requires": true,
   "dependencies": {
     "@google-cloud/paginator": {
