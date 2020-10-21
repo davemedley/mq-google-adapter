@@ -26,28 +26,28 @@ Run using " runmqsc QM1 < QM1.mqsc "
 (note in linux you quite often have to use " sudo su - mqm -c "runmqsc QM1 < /home/user/Downloads/QM1.mqsc" ")
 To run as mqm user.
 
-###Linux###
+### Linux ###
 export MQIJS_NOREDIST=TRUE
 export GOOGLE_APPLICATION_CREDENTIALS=~/Downloads/disco-stock-292311-5ff3c15e6c93.json (add the json security token for GCP)
 (setup.sh included)
 
-###Windows###
+### Windows ###
 set MQIJS_NOREDIST=TRUE
 set GOOGLE_APPLICATION_CREDENTIALS=%CD%\disco-stock-292311-905474dc1970.json
 
-###Google###
+### Google ###
 Google App Creds help found here: https://cloud.google.com/docs/authentication/getting-started
 Manually create a topic, a dead letter topic and a subscription in which to read from the topic.
 Create a second topic for tranmission back to GCP.
 
-##Licence##
+## Licence ##
 This is provided with no support or licence or any kind, please also refer to the licences and support provided in the above code provided elsewhere.
 
-##Further Development##
-###Support MQ client bindings###
+## Further Development ##
+### Support MQ client bindings ###
 Currently using local bindings, this will need chnaging otherwise the node instances will need to be on the same server as the MQ instance.
-###Docker###
+### Docker ###
 To deploy in a docker container, dependant ont he above (otherwise each container needs MQ.
-###Testing###
+### Testing ###
 Adding of unit tests, testing at scale, testing with multiple instances (check for race condition etc)
 Check if Ack is working correctly, i.e. MQ error should not ack on Google, MQ should rollback if Google publish fails etc..
