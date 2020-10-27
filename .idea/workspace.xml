@@ -19,11 +19,9 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="62bd157f-80b8-4022-a352-07bb8a9d0654" name="Default Changelist" comment="Updates">
+    <list default="true" id="62bd157f-80b8-4022-a352-07bb8a9d0654" name="Default Changelist" comment="Updates and mqsc script added">
+      <change afterPath="$PROJECT_DIR$/gcpToMQCTop.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/amqspub.js" beforeDir="false" afterPath="$PROJECT_DIR$/amqspub.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gcpToMQ.js" beforeDir="false" afterPath="$PROJECT_DIR$/gcpToMQ.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gcpToMQTop.js" beforeDir="false" afterPath="$PROJECT_DIR$/gcpToMQTop.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,10 +55,10 @@
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
+    <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -121,7 +119,7 @@
       <workItem from="1602497701942" duration="16575000" />
       <workItem from="1602527168851" duration="24330000" />
       <workItem from="1602598845162" duration="17390000" />
-      <workItem from="1602764431723" duration="6491000" />
+      <workItem from="1602764431723" duration="10508000" />
     </task>
     <task id="LOCAL-00001" summary="Updates">
       <created>1602749526056</created>
@@ -130,7 +128,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602749526056</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Updates and mqsc script added">
+      <created>1603220343735</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1603220343735</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -150,7 +155,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updates" />
+    <MESSAGE value="Updates and mqsc script added" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates and mqsc script added" />
   </component>
   <component name="WindowStateProjectService">
     <state x="72" y="22" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1602620261523">
@@ -276,9 +282,9 @@
       <screen x="72" y="27" width="888" height="513" />
     </state>
     <state x="72" y="22" width="800" height="513" key="Vcs.Push.Dialog.v2/72.27.888.513/72.27.888.513@72.27.888.513" timestamp="1602749857395" />
-    <state x="620" y="379" width="428" height="182" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1603220240579">
+    <state x="620" y="374" width="432" height="182" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1603306195892">
       <screen x="72" y="27" width="1528" height="873" />
     </state>
-    <state x="620" y="379" width="428" height="182" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/72.27.1528.873@72.27.1528.873" timestamp="1603220240579" />
+    <state x="620" y="374" width="432" height="182" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/72.27.1528.873@72.27.1528.873" timestamp="1603306195892" />
   </component>
 </project>
