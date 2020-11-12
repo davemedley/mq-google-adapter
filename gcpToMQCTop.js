@@ -1,38 +1,36 @@
-// Debug for segfaults
-// const SegfaultHandler = require('segfault-handler');
-// SegfaultHandler.registerHandler('crash.log');
+'use strict';
 
 /**
- * This application demonstrates how to read from GPS and write to MQ
- * Author David Medley 21 Oct 2020
+ * This application demonstrates how to read from GPS and write to MQ Topic client connection
+ * Author David Medley 27 Oct 2020
  */
-
-'use strict';
 
 // sample-metadata:
 //   title: GCP Pub Sub to MQ Topic (client binding)
 //   description: Listens for messages from a subscription, then puts them to MQ as a topic.
-//   usage: node gcpToMQTop.js <subscription-name> <mq-topic> <connection> <channel>
+//   usage: node gcpToMQCTop.js <subscription-name> <mq-topic> <connection> <channel>
+
+// Import the MQ package
+var mq = require('ibmmq');
+var MQC = mq.MQC; // Want to refer to this export directly for simplicity
+
 var subscriptionName;
 var topicString;
 var connectionName;
 var channelName;
+var qMgr;
 const timeout = 180;
+var mqError;
 
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
-if (myArgs[3]) {
+if (myArgs[4]) {
     subscriptionName = myArgs[0];
     topicString  = myArgs[1];
     connectionName  = myArgs[2];
     channelName  = myArgs[3];
-} if (myArgs[5]) {
-    subscriptionName = myArgs[0];
-    topicString  = myArgs[1];
-    connectionName  = myArgs[2];
-    channelName  = myArgs[3];
-    user  = myArgs[4];
-    password  = myArgs[5];
+    qMgr  = myArgs[4];
+    
 } else {
     throw 'Incorrect number of inputs.';
 }
@@ -57,12 +55,14 @@ function main() {
             console.log(`Received message ${message.id}:`);
 
             // Put to MQ
-            putToMQTop(message);
+            putToMQCTop(message);
 
             messageCount += 1;
 
             // "Ack" (acknowledge receipt of) the message
-            message.ack();
+            if (!mqError) {
+                message.ack();
+            }
         };
 
         // Listen for new messages until timeout is hit
@@ -79,20 +79,21 @@ function main() {
     // [END pubsub_quickstart_subscriber]
 }
 
-function putToMQTop(message) {
+function putToMQCTop(message) {
+
+    mqError = false;
 
     // Create default MQCNO structure
     var cno = new mq.MQCNO();
 
     // Add authentication via the MQCSP structure
-    if (user) {
-        var csp = new mq.MQCSP();
-        csp.UserId = user;
-        csp.Password = password;
-        // Make the MQCNO refer to the MQCSP
-        // This line allows use of the userid/password
-        cno.SecurityParms = csp;
-    }
+    var csp = new mq.MQCSP();
+    csp.UserId = "admin";
+    csp.Password = "passw0rd";
+    // Make the MQCNO refer to the MQCSP
+    // This line allows use of the userid/password
+    cno.SecurityParms = csp;
+
     // And use the MQCD to programatically connect as a client
     // First force the client mode
     cno.Options |= MQC.MQCNO_CLIENT_BINDING;
@@ -100,20 +101,38 @@ function putToMQTop(message) {
     var cd = new mq.MQCD();
     cd.ConnectionName = connectionName;
     cd.ChannelName = channelName;
+
+    // The TLS parameters are the minimal set needed here. You might
+    // want more control such as SSLPEER values.
+    // This SSLClientAuth setting means that this program does not need to
+    // present a certificate to the server - but it must match how the
+    // SVRCONN is defined on the queue manager.
+    // If you have to present a client certificate too then the
+    // SSLClientAuth is set to MQC.MQSCA_REQUIRED. You may
+    // also want to set the sco.CertificateLabel to choose  
+    // which certificate is to be sent.
+    //cd.SSLCipherSpec = "TLS_RSA_WITH_AES_128_CBC_SHA256";
+    //cd.SSLClientAuth = MQC.MQSCA_OPTIONAL;
+
     // Make the MQCNO refer to the MQCD
     cno.ClientConn = cd;
 
-    // MQ V9.1.2 allows setting of the application name explicitly
-    if (MQC.MQCNO_CURRENT_VERSION >= 7) {
-        cno.ApplName = "Node.js GCP Topic Put";
-    }
+    // Set the SSL/TLS Configuration Options structure field that
+    // specifies the keystore (expect to see a .kdb, .sth and .rdb
+    // with the same root name). For this program, all we need is for
+    // the keystore to contain the signing information for the queue manager's
+    // cert.
+    //sco.KeyRepository = "./mykey";
 
+    // And make the CNO refer to the SSL Connection Options
+    //cno.SSLConfig = sco;
+        
     mq.Connx(qMgr, cno, function(err,hConn) {
         if (err) {
             console.error(formatErr(err));
+            mqError = true;
         } else {
             console.log("MQCONN to %s successful ", qMgr);
-
             // Define what we want to open, and how we want to open it.
             //
             // For this sample, we use only the ObjectString, though it is possible
@@ -130,41 +149,40 @@ function putToMQTop(message) {
             mq.Open(hConn,od,openOptions,function(err,hObj) {
                 if (err) {
                     console.error(formatErr(err));
+                    mqError = true;
                 } else {
                     console.log("MQOPEN of %s successful",topicString);
-                    publishMessage(hObj,message);
+                    // Pass data from GCP to MQ
+                    var msg = formatMsg(message);
+
+                    var mqmd = new mq.MQMD(); // Defaults are fine.
+                    var pmo = new mq.MQPMO();
+
+                    // Describe how the Publish (Put) should behave
+                    pmo.Options = MQC.MQPMO_NO_SYNCPOINT |
+                        MQC.MQPMO_NEW_MSG_ID |
+                        MQC.MQPMO_NEW_CORREL_ID;
+                    // Add in the flag that gives a warning if none is
+                    // subscribed to this topic.
+                    pmo.Options |= MQC.MQPMO_WARN_IF_NO_SUBS_MATCHED;
+                    mq.Put(hObj,mqmd,pmo,msg,function(err) {
+                        if (err) {
+                            console.error(formatErr(err));
+                            mqError = true;
+                        } else {
+                            console.log("MQPUT successful");
+                        }
+                    });
+                    //setImmediate(publishMessage);
                 }
                 cleanup(hConn,hObj);
+                return true;            
             });
         }
     });
 }
 
 // Define some functions that will be used from the main flow
-function publishMessage(hObj, message) {
-
-    // Pass data from GCP to MQ
-    var msg = formatMsg(message);
-
-    var mqmd = new mq.MQMD(); // Defaults are fine.
-    var pmo = new mq.MQPMO();
-
-    // Describe how the Publish (Put) should behave
-    pmo.Options = MQC.MQPMO_NO_SYNCPOINT |
-        MQC.MQPMO_NEW_MSG_ID |
-        MQC.MQPMO_NEW_CORREL_ID;
-    // Add in the flag that gives a warning if none is
-    // subscribed to this topic.
-    pmo.Options |= MQC.MQPMO_WARN_IF_NO_SUBS_MATCHED;
-    mq.Put(hObj,mqmd,pmo,msg,function(err) {
-        if (err) {
-            console.error(formatErr(err));
-        } else {
-            console.log("MQPUT successful");
-        }
-    });
-    //setImmediate(publishMessage);
-}
 
 // Wrap JSON with origin ID
 function formatMsg(msg) {
@@ -196,6 +214,5 @@ function formatErr(err) {
     return  "MQ call failed in " + err.message;
 }
 
-//console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 main();

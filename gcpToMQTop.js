@@ -21,6 +21,7 @@ var subscriptionName;
 var topicString;
 var qMgr;
 const timeout = 180;
+var mqError;
 
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
@@ -57,7 +58,9 @@ function main() {
             messageCount += 1;
 
             // "Ack" (acknowledge receipt of) the message
-            message.ack();
+            if (!mqError) {
+                message.ack();
+            }
         };
 
         // Listen for new messages until timeout is hit
@@ -75,6 +78,8 @@ function main() {
 }
 
 function putToMQTop(message) {
+
+    mqError = false;
 
     //Set local Binding
     var cno = new mq.MQCNO();
@@ -102,6 +107,7 @@ function putToMQTop(message) {
             mq.Open(hConn,od,openOptions,function(err,hObj) {
                 if (err) {
                     console.error(formatErr(err));
+                    mqError = true;
                 } else {
                     console.log("MQOPEN of %s successful",topicString);
                     publishMessage(hObj,message);
@@ -131,6 +137,7 @@ function publishMessage(hObj, message) {
     mq.Put(hObj,mqmd,pmo,msg,function(err) {
         if (err) {
             console.error(formatErr(err));
+            mqError = true;
         } else {
             console.log("MQPUT successful");
         }

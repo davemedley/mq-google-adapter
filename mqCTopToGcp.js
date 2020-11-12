@@ -1,31 +1,14 @@
 'use strict';
-/*
-  Copyright (c) IBM Corporation 2017, 2018
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-   Contributors:
-     Mark Taylor - Initial Contribution
-*/
-
-/*
- * This is an example of a Node.js program to subscribe to publications
- * made through IBM MQ.
- *
- * The topic and queue manager name can be given as parameters on the
- * command line. Defaults are coded in the program.
- *
+/**
+ * This application demonstrates how to read from MQ Topic client connection and write to Google Pub/Sub 
+ * Author David Medley 11 Nov 2020
  */
+
+// sample-metadata:
+//   title: GCP Pub Sub to MQ Topic (client binding)
+//   description: Listens for messages from a subscription, then puts them to MQ as a topic.
+//   usage: node mqCTopToGcp.js <subscription-name> <mq-topic> <connection> <channel> <qmgr>
 
 // Import the MQ package
 var mq = require('ibmmq');
@@ -36,8 +19,13 @@ var StringDecoder = require('string_decoder').StringDecoder;
 var decoder = new StringDecoder('utf8');
 
 // The queue manager and queue to be used
-var qMgr = "QM1";
-var topicString = "dev/topic";
+var subscriptionName;
+var topicString;
+var connectionName;
+var channelName;
+var qMgr;
+const timeout = 180;
+var mqError;
 
 // Global variables
 var ok = true;
@@ -115,19 +103,41 @@ function cleanup(hConn,hObjPubQ, hObjSubscription) {
 // Connect to the queue manager. If that works, the callback function
 // opens the topic, and then we can start to retrieve messages.
 
-console.log("Sample AMQSSUB.JS start");
-
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
-if (myArgs[0]) {
-  topicString = myArgs[0];
-}
-if (myArgs[1]) {
-  qMgr  = myArgs[1];
+if (myArgs[4]) {
+    subscriptionName = myArgs[0];
+    topicString  = myArgs[1];
+    connectionName  = myArgs[2];
+    channelName  = myArgs[3];
+    qMgr = myArgs[4];    
+} else {
+    throw 'Incorrect number of inputs.';
 }
 
+// Create default MQCNO structure
+var cno = new mq.MQCNO();
+
+// Add authentication via the MQCSP structure
+var csp = new mq.MQCSP();
+csp.UserId = "admin";
+csp.Password = "passw0rd";
+// Make the MQCNO refer to the MQCSP
+// This line allows use of the userid/password
+cno.SecurityParms = csp;
+
+// And use the MQCD to programatically connect as a client
+// First force the client mode
+cno.Options |= MQC.MQCNO_CLIENT_BINDING;
+// And then fill in relevant fields for the MQCD
+var cd = new mq.MQCD();
+cd.ConnectionName = connectionName;
+cd.ChannelName = channelName;
+// Make the MQCNO refer to the MQCD
+cno.ClientConn = cd;
+
 // Do the connect, including a callback function
-mq.Conn(qMgr, function(err,hConn) {
+mq.Connx(qMgr, cno, function(err,hConn)  {
    if (err) {
      console.log("MQCONN ended with reason code " + err.mqrc);
    } else {

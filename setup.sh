@@ -1,4 +1,4 @@
 #!/bin/bash
 export MQIJS_NOREDIST=TRUE
-export GOOGLE_APPLICATION_CREDENTIALS=~/Downloads/disco-stock-292311-5ff3c15e6c93.json
+export GOOGLE_APPLICATION_CREDENTIALS=~/Downloads/disco-stock-292311-f022353b952d.json
 npm install ibmmq
