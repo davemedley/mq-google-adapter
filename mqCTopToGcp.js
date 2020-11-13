@@ -1,3 +1,7 @@
+// Debug for segfaults (Linux)
+const SegfaultHandler = require('segfault-handler');
+SegfaultHandler.registerHandler('crash.log');
+
 'use strict';
 
 /**
@@ -9,7 +13,6 @@
 //   title: GCP Pub Sub to MQ Topic (client binding)
 //   description: Listens for messages from a subscription, then puts them to MQ as a topic.
 //   usage: node mqCTopToGcp.js <subscription-name> <mq-topic> <connection> <channel> <qmgr>
-
 // Import the MQ package
 var mq = require('ibmmq');
 var MQC = mq.MQC; // Want to refer to this export directly for simplicity
@@ -24,8 +27,10 @@ var topicString;
 var connectionName;
 var channelName;
 var qMgr;
-const timeout = 180;
 var mqError;
+var user;
+var password;
+const timeout = 180;
 
 // Global variables
 var ok = true;
@@ -105,12 +110,20 @@ function cleanup(hConn,hObjPubQ, hObjSubscription) {
 
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
-if (myArgs[4]) {
+if (myArgs[6]) {
     subscriptionName = myArgs[0];
     topicString  = myArgs[1];
     connectionName  = myArgs[2];
     channelName  = myArgs[3];
-    qMgr = myArgs[4];    
+    qMgr = myArgs[4];
+    user  = myArgs[5];
+    password  = myArgs[6];    
+} else if (myArgs[4]) {
+    subscriptionName = myArgs[0];
+    topicString  = myArgs[1];
+    connectionName  = myArgs[2];
+    channelName  = myArgs[3];
+    qMgr  = myArgs[4];
 } else {
     throw 'Incorrect number of inputs.';
 }
@@ -119,12 +132,14 @@ if (myArgs[4]) {
 var cno = new mq.MQCNO();
 
 // Add authentication via the MQCSP structure
-var csp = new mq.MQCSP();
-csp.UserId = "admin";
-csp.Password = "passw0rd";
-// Make the MQCNO refer to the MQCSP
-// This line allows use of the userid/password
-cno.SecurityParms = csp;
+if (user) {
+    var csp = new mq.MQCSP();
+    csp.UserId = user;
+    csp.Password = password;
+    // Make the MQCNO refer to the MQCSP
+    // This line allows use of the userid/password
+    cno.SecurityParms = csp;
+}
 
 // And use the MQCD to programatically connect as a client
 // First force the client mode
