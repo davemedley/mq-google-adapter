@@ -1,6 +1,6 @@
 // Debug for segfaults (Linux)
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler('crash.log');
+//const SegfaultHandler = require('segfault-handler');
+//SegfaultHandler.registerHandler('crash.log');
 
 'use strict';
 

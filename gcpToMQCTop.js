@@ -1,6 +1,6 @@
 // Debug for segfaults (Linux)
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler('crash.log');
+//const SegfaultHandler = require('segfault-handler');
+//SegfaultHandler.registerHandler('crash.log');
 
 'use strict';
 
@@ -143,7 +143,8 @@ function putToMQCTop(message) {
     // And make the CNO refer to the SSL Connection Options
     //cno.SSLConfig = sco;
     
-    console.log("Attepting: ", subscriptionName, topicString, connectionName, channelName, qMgr, user, password); 
+    // Debug line
+    //console.log("Attepting: ", subscriptionName, topicString, connectionName, channelName, qMgr, user, password); 
  
     mq.Connx(qMgr, cno, function(err,hConn) {
         if (err) {
