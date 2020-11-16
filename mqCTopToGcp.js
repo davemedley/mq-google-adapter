@@ -79,6 +79,14 @@ function getMessage(hObj) {
  console.log("HELLOO");
 }
 
+function printBody(format,buf,len) {
+  if (format=="MQSTR") {
+    console.log("message len=%d <%s>", len,decoder.write(buf.slice(0,len)));
+  } else {
+    console.log("binary message: " + buf);
+  }
+}
+
 // When we're done, close queues and connections
 function cleanup(hConn,hObjPubQ, hObjSubscription) {
   // Demonstrate two ways of closing queues - first using an exception, then
