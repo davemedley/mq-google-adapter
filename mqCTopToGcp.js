@@ -38,6 +38,7 @@ var ok = true;
 
 // Define some functions that will be used from the main flow
 function getMessages(hObj) {
+ console.log("HELLO");
   while (ok) {
     getMessage(hObj);
   }
@@ -47,7 +48,6 @@ function getMessages(hObj) {
 // the synchronous method for simplicity. See amqsgeta for how to use the
 // async method.
 function getMessage(hObj) {
-
   var buf = Buffer.alloc(1024);
 
   var mqmd = new mq.MQMD();
@@ -73,8 +73,10 @@ function getMessage(hObj) {
       } else {
         console.log("binary message: " + buf);
       }
+        printBody(mqmd.Format,buf,len);
     }
   });
+ console.log("HELLOO");
 }
 
 // When we're done, close queues and connections
@@ -174,7 +176,8 @@ mq.Connx(qMgr, cno, function(err,hConn)  {
          // And loop getting messages until done.
          getMessages(hObjPubQ);
        }
-       cleanup(hConn,hObjPubQ, hObjSubscription);
+       
+       setTimeout(cleanup(hConn,hObjPubQ, hObjSubscription), 3000);
      });
    }
 });
