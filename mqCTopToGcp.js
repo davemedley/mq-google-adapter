@@ -10,9 +10,10 @@
  */
 
 // sample-metadata:
-//   title: GCP Pub Sub to MQ Topic (client binding)
-//   description: Listens for messages from a subscription, then puts them to MQ as a topic.
+//   title: MQ Topic (client binding) to GCP Topic
+//   description: Listens for messages on MQ, then puts them to GCP
 //   usage: node mqCTopToGcp.js <subscription-name> <mq-topic> <connection> <channel> <qmgr>
+
 // Import the MQ package
 var mq = require('ibmmq');
 var MQC = mq.MQC; // Want to refer to this export directly for simplicity
