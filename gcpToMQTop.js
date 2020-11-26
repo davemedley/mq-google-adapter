@@ -21,7 +21,6 @@ var subscriptionName;
 var topicString;
 var qMgr;
 const timeout = 180;
-var mqError;
 
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
@@ -53,12 +52,50 @@ function main() {
             console.log(`Received message ${message.id}:`);
 
             // Put to MQ
-            putToMQTop(message);
+            async function putToMQTop(message) {
+            
+                //Set local Binding
+                var cno = new mq.MQCNO();
+                cno.Options = MQC.MQCNO_NONE;
+            
+                mq.Connx(qMgr, cno, function(err,hConn) {
+                    if (err) {
+                        console.error(formatErr(err));
+                    } else {
+                        console.log("MQCONN to %s successful ", qMgr);
+            
+                        // Define what we want to open, and how we want to open it.
+                        //
+                        // For this sample, we use only the ObjectString, though it is possible
+                        // to use the ObjectName to refer to a topic Object (ie something
+                        // that shows up in the DISPLAY TOPIC list) and then that
+                        // object's TopicStr attribute is used as a prefix to the TopicString
+                        // value supplied here.
+                        // Remember that the combined TopicString attribute has to match what
+                        // the subscriber is using.
+                        var od = new mq.MQOD();
+                        od.ObjectString = topicString;
+                        od.ObjectType = MQC.MQOT_TOPIC;
+                        var openOptions = MQC.MQOO_OUTPUT;
+                        mq.Open(hConn,od,openOptions,function(err,hObj) {
+                            if (err) {
+                                console.error(formatErr(err));
+                            } else {
+                                console.log("MQOPEN of %s successful",topicString);
+                                publishMessage(hObj,message);
+                            }
+                            cleanup(hConn,hObj);
+                        });
+                    }
+                });
+            }
+
+            putToMQTop().catch(console.error);
 
             messageCount += 1;
 
             // "Ack" (acknowledge receipt of) the message
-            if (!mqError) {
+            if (!console.error) {
                 message.ack();
             }
         };
@@ -75,47 +112,6 @@ function main() {
     listenForMessages();
     // [END pubsub_subscriber_async_pull]
     // [END pubsub_quickstart_subscriber]
-}
-
-function putToMQTop(message) {
-
-    mqError = false;
-
-    //Set local Binding
-    var cno = new mq.MQCNO();
-    cno.Options = MQC.MQCNO_NONE;
-
-    mq.Connx(qMgr, cno, function(err,hConn) {
-        if (err) {
-            console.error(formatErr(err));
-        } else {
-            console.log("MQCONN to %s successful ", qMgr);
-
-            // Define what we want to open, and how we want to open it.
-            //
-            // For this sample, we use only the ObjectString, though it is possible
-            // to use the ObjectName to refer to a topic Object (ie something
-            // that shows up in the DISPLAY TOPIC list) and then that
-            // object's TopicStr attribute is used as a prefix to the TopicString
-            // value supplied here.
-            // Remember that the combined TopicString attribute has to match what
-            // the subscriber is using.
-            var od = new mq.MQOD();
-            od.ObjectString = topicString;
-            od.ObjectType = MQC.MQOT_TOPIC;
-            var openOptions = MQC.MQOO_OUTPUT;
-            mq.Open(hConn,od,openOptions,function(err,hObj) {
-                if (err) {
-                    console.error(formatErr(err));
-                    mqError = true;
-                } else {
-                    console.log("MQOPEN of %s successful",topicString);
-                    publishMessage(hObj,message);
-                }
-                cleanup(hConn,hObj);
-            });
-        }
-    });
 }
 
 // Define some functions that will be used from the main flow
@@ -137,7 +133,6 @@ function publishMessage(hObj, message) {
     mq.Put(hObj,mqmd,pmo,msg,function(err) {
         if (err) {
             console.error(formatErr(err));
-            mqError = true;
         } else {
             console.log("MQPUT successful");
         }

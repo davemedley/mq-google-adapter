@@ -25,8 +25,7 @@ var decoder = new StringDecoder('utf8');
 
 
 // The queue manager and queue to be used
-var subscriptionName;
-var topicString;
+var topicName;
 var connectionName;
 var channelName;
 var qMgr;
@@ -44,6 +43,8 @@ var queueHandle;
 var waitInterval = 3; // max seconds to wait for a new message
 var ok = true;
 var exitCode = 0;
+
+var data;
 
 /*
  * Format any error messages
@@ -111,11 +112,46 @@ function getCB(err, hObj, gmo,md,buf, hConn ) {
      // callback to be deleted after this one has completed.
      mq.GetDone(hObj);
    } else {
-     if (md.Format=="MQSTR") {
-       console.log("message <%s>", decoder.write(buf));
-     } else {
-       console.log("binary message: " + buf);
-     }
+     // Successful read
+
+      // [START pubsub_publish_custom_attributes]
+      
+      if (md.Format=="MQSTR") {
+        console.log("Message: " + decoder.write(buf));
+        data = JSON.stringify(decoder.write(buf));
+      } else {
+        console.log("Message: " + buf);
+        data = JSON.stringify(buf);
+      }
+      
+      // const topicName = 'YOUR_TOPIC_NAME';
+      //const data = JSON.stringify(decoder.write(buf));
+
+      // Imports the Google Cloud client library
+      const {PubSub} = require('@google-cloud/pubsub');
+
+      // Creates a client; cache this for further use
+      const pubSubClient = new PubSub();
+
+      async function publishMessageWithCustomAttributes() {
+        // Publishes the message as a string, e.g. "Hello, world!" or JSON.stringify(someObject)
+        const dataBuffer = Buffer.from(data);
+
+        // Add two custom attributes, origin and username, to the message
+        const customAttributes = {
+          origin: 'ibm-mq',
+          msgId: toString(md.MsgId),
+        };
+
+        const messageId = await pubSubClient
+          .topic(topicName)
+          .publish(dataBuffer, customAttributes);
+        console.log(`Message ${messageId} published.`);
+      }
+
+      publishMessageWithCustomAttributes().catch(console.error);
+      // [END pubsub_publish_custom_attributes]
+
   }
 }
 
@@ -148,7 +184,7 @@ function cleanup(hConn,hObj) {
 // Get command line parameters
 var myArgs = process.argv.slice(2); // Remove redundant parms
 if (myArgs[6]) {
-    subscriptionName = myArgs[0];
+    topicName = myArgs[0];
     qName  = myArgs[1];
     connectionName  = myArgs[2];
     channelName  = myArgs[3];
@@ -156,7 +192,7 @@ if (myArgs[6]) {
     user  = myArgs[5];
     password  = myArgs[6];    
 } else if (myArgs[4]) {
-    subscriptionName = myArgs[0];
+    topicName = myArgs[0];
     qName  = myArgs[1];
     connectionName  = myArgs[2];
     channelName  = myArgs[3];
